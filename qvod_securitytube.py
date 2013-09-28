@@ -13,7 +13,7 @@ def yalogo():
  / __)/ _ \(  _ \( ___)(  _ \(  )    /__\ ( \/ )
 ( (__( (_) ))(_) ))__)  )___/ )(__  /(__)\ \  / 
  \___)\___/(____/(____)(__)  (____)(__)(__)(__) 
-Name:revision3  qvod exploit
+Name:securitytube  av exploit [only vimeo.com]
 Author:Yaseng [yaseng@uauc.net]
  '''
 # show message
@@ -50,12 +50,12 @@ def get(url):
      return 0   
 
 def fetch_qvod_count(data):
-    qvod_re = re.compile('<li class="Grid3 Card" data-element="slide">([\s\S]*?)</li>')
+    qvod_re = re.compile('<td><a href="(.*)" target="_blank"><img width="130"')
     try:
        rq = qvod_re.findall(data)  # match
-       msg("fetch data count:%d" % len(rq))
        for qvod in rq :
-        qvod_queue.put(qvod_url + find_text(qvod, '<a href="', '">'))
+        print qvod
+        qvod_queue.put(qvod)
        return len(rq)
     except :
         return -1
@@ -67,13 +67,17 @@ class Qvoder(threading.Thread):
         while 1:
          if qvod_queue.empty() == True:
              break
-
-         url = find_text(get(qvod_queue.get()), 'class="sizename" href="', '" target')
-         msg(url, 1)
-         qvodlist.write(url + "\n")
+         data=get(qvod_url+qvod_queue.get());
+         vimeo_url=find_text(data,'vimeo.com/moogaloop.swf\?clip_id=','&amp;server=')
+         if not vimeo_url is None:
+              #url=find_text(get("downloadvimeo.com/generate?url=http://vimeo.com/"+vimeo_url),'<cmd quality=\"hd\">','<\/cmd>')
+              print  "http://downloadvimeo.com/generate?url=http://vimeo.com/"+vimeo_url
+         else:
+              msg('not vimei video',2)
  
-parser = argparse.ArgumentParser(usage="qvod_revision3.py  -u username -t [100] -c [1000]", description="revision3  qvod exploit 1.0")
-parser.add_argument("-u", "--user", help="revision3.com user")
+ 
+parser = argparse.ArgumentParser(usage="qvod_securitytube.py  -g group -t [100] -c [1000]", description="securitytube  av exploit 1.0")
+parser.add_argument("-g", "--groupid", help="securitytube.com group")
 parser.add_argument("-t", "--thread", help="working thread")
 parser.add_argument("-c", "--count", help="data count")
 parser.add_argument("-f", "--file", help="log file")
@@ -82,25 +86,26 @@ params = parser.parse_args()
  
 if __name__ == '__main__':
      yalogo()
-     if not params.user is None:
+     if not params.groupid is None:
         global qvod_url
         global  qvod_queue
         qvod_queue = Queue.Queue()
-        qvod_url = "http://revision3.com/"
-        
+        qvod_url = "http://www.securitytube.net/"
         count = 1000 if params.count is None else params.count
-        file = params.user + ".txt" if params.file is None else params.file
-        len = fetch_qvod_count(get("%s/%s/episodePage?limit=%s" % (qvod_url, params.user, count)))
+        data=get("%s/groups?operation=view&groupId=%s" % (qvod_url, params.groupid))
+        title=find_text(data,'<h3><b>','</b></h3>');
+        file = title + ".txt" if params.file is None else params.file
+        len = fetch_qvod_count(data)
         thread = len if params.thread is None else params.thread
         qvodlist = open(file, 'a')
-        msg("Exploit target %s user:%s  trread:%s count:%s" % (qvod_url, params.user, thread, count)) 
+        msg("Exploit target %s group:%s  title:%s trread:%s count:%s" % (qvod_url, params.groupid,title,thread, len)) 
+        msg("fetch data count:%d" % len)
         for i in range(int(thread)):
           Qvoder().start() 
-        msg("Fetch %s  files  succeed!!!" % count,1)
          
      else :
         parser.print_help()
-        msg("Missing param user", 2)
+        msg("Missing param groupid", 2)
         
      
      
